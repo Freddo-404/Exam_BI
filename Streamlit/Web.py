@@ -2,7 +2,7 @@
 import streamlit as st
 import sys
 import os
-import wikipediaapi
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
