@@ -3,7 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
-import os
 
 # Funktion: Histogram
 def histogram(data, column_name, title="Histogram"):
@@ -21,15 +20,6 @@ def boxplot(data, column_name, title="Box Plot"):
     ax.set_title(title)
     st.pyplot(fig)
 
-# Funktion: Scatter plot (2D)
-def scatter_plot(data, x_column, y_column, title="Scatter Plot"):
-    fig, ax = plt.subplots()
-    ax.scatter(data[x_column], data[y_column])
-    ax.set_title(title)
-    ax.set_xlabel(x_column)
-    ax.set_ylabel(y_column)
-    st.pyplot(fig)
-
 # Funktion: Scatter plot (3D)
 def scatter_plot_3d(data, x_column, y_column, z_column, title="3D Scatter Plot", color_column=None):
     st.subheader(title)
@@ -44,58 +34,90 @@ def scatter_plot_3d(data, x_column, y_column, z_column, title="3D Scatter Plot",
     fig.update_layout(title=title)
     st.plotly_chart(fig)
 
-# VISUALISERING: Faglinje og grafer
+# Funktion: Hovedvisualisering
 def show_graphs():
-    # Find sti til data
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    excel_path = os.path.join(base_dir, 'Streamlit', 'Data', 'Uddannelse_combined.xlsx')
-
-    st.header("Uddannelse Data Visualization")
+    st.title("Analyse af Frafald på Videregående Uddannelser")
 
     # Indlæs data
-    data = pd.read_excel(excel_path)
-    data.columns = data.columns.map(str)  # alle kolonnenavne som strenge
+    file_path = "Data/Uddannelse_combined.xlsx"
+    df = pd.read_excel(file_path)
+    years = list(range(2015, 2025))
 
-    # Konverter årskolonner til numerisk
-    year_cols = [str(y) for y in range(2015, 2025)]
-    data[year_cols] = data[year_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
+    # Split data
+    fuldfort = df[df['Type'] == 'Fuldført']
+    afbrudt = df[df['Type'] == 'Afbrudt']
 
-    # ✅ FagLinje dropdown + afbrudt/fuldført bar chart
-    faglinje_valg = st.selectbox("Vælg en FagLinje", sorted(data["FagLinjer"].dropna().unique()))
-    filtered = data[data["FagLinjer"] == faglinje_valg]
+    # Aggreger på FagLinje og FagRetning
+    agg_fuldfort = fuldfort.groupby(['FagLinjer','FagRetning'])[years].sum().reset_index()
+    agg_afbrudt = afbrudt.groupby(['FagLinjer','FagRetning'])[years].sum().reset_index()
 
-    if filtered.empty:
-        st.warning("Ingen data fundet for den valgte faglinje.")
-    else:
-        grouped = filtered.groupby("Type")[year_cols].sum().transpose()
-        st.subheader(f"Fuldført vs. Afbrudt for: {faglinje_valg}")
-        st.bar_chart(grouped)
-        st.dataframe(grouped)
+    # Merge og beregn frafaldsrate
+    ret_merged = pd.merge(agg_fuldfort, agg_afbrudt, on=['FagLinjer','FagRetning'], suffixes=('_fuldfort', '_afbrudt'))
+    ret_merged['Total_fuldfort'] = ret_merged[[f"{y}_fuldfort" for y in years]].sum(axis=1)
+    ret_merged['Total_afbrudt'] = ret_merged[[f"{y}_afbrudt" for y in years]].sum(axis=1)
+    ret_merged['Frafaldsrate'] = 100 * ret_merged['Total_afbrudt'] / (ret_merged['Total_fuldfort'] + ret_merged['Total_afbrudt'])
+
+    # Første valg: FagLinje
+    st.header("Trin 1: Vælg en FagLinje")
+    alle_linjer = sorted(ret_merged['FagLinjer'].unique())
+    valgt_linje = st.selectbox("Vælg en FagLinje", alle_linjer)
+
+    linje_data = ret_merged[ret_merged['FagLinjer'] == valgt_linje]
+
+    if linje_data.empty:
+        st.warning("Ingen data fundet for den valgte FagLinje.")
+        return
+
+    # Tilføj bar chart (Fuldført vs. Afbrudt for valgt FagLinje)
+    grouped_linje = df[df['FagLinjer'] == valgt_linje].groupby("Type")[years].sum().transpose()
+    st.subheader(f"Fuldført vs. Afbrudt for: {valgt_linje}")
+    st.bar_chart(grouped_linje)
+    st.dataframe(grouped_linje)
 
     st.divider()
-    st.subheader("Andre visualiseringer")
 
-    # ✅ Tidligere udkommenterede blokke er bevaret herunder:
+    # Vis FagRetninger med frafaldsrate
+    st.subheader(f"Frafaldsrate for FagRetninger under {valgt_linje}")
+    st.dataframe(linje_data[['FagRetning', 'Frafaldsrate']].sort_values(by="Frafaldsrate", ascending=False))
 
-    # if all(col in data.columns for col in ['alcohol', 'chlorides', 'quality']):
-    #     scatter_plot_3d(data, 'alcohol', 'chlorides', 'quality', title="Alcohol vs Chlorides vs Quality")
+    # Andet valg: FagRetning
+    st.header("Trin 2: Vælg en FagRetning under den valgte FagLinje")
+    retninger = linje_data['FagRetning'].unique()
+    valgt_retning = st.selectbox("Vælg en FagRetning", retninger)
 
-    # if 'Type' in data.columns:
-    #     histogram(data, 'Type', title="Alcohol Content Distribution")
+    valgte_data = linje_data[linje_data['FagRetning'] == valgt_retning]
 
-    # if 'alcohol' in data.columns and 'quality' in data.columns:
-    #     scatter_plot(data, 'alcohol', 'quality', title="Alcohol vs Quality")
+    if valgte_data.empty:
+        st.warning("Ingen data for den valgte kombination.")
+        return
 
-    # 📊 Faktiske plots baseret på dine data:
-    if all(col in data.columns for col in ['Type', '2015']):
-        histogram(data, 'Type', title="Antallet af afbrudte og fuldførte")
-        boxplot(data, '2015', title="Education Levels in 2015")
+    row = valgte_data.iloc[0]
+    fuldførte = row[[f"{y}_fuldfort" for y in years]].values
+    afbrudte = row[[f"{y}_afbrudt" for y in years]].values
+    total = fuldførte + afbrudte
+    frafaldsrate = 100 * afbrudte / total
 
-    if all(col in data.columns for col in ['Type', '2020']):
-        boxplot(data, '2020', title="Education Levels in 2020")
+    st.subheader(f"Tidsserie for {valgt_retning} under {valgt_linje}")
+    st.line_chart(pd.DataFrame({
+        "Fuldført": fuldførte,
+        "Afbrudt": afbrudte
+    }, index=years))
 
-    if all(col in data.columns for col in ['Type', '2023']):
-        boxplot(data, '2023', title="Education Levels in 2023")
+    st.line_chart(pd.DataFrame({
+        "Frafaldsrate (%)": frafaldsrate
+    }, index=years))
+    
+    # Ekstra plots
+    st.subheader("Fordelingsanalyser")
+    if 'Type' in df.columns:
+        histogram(df, 'Type', title="Antallet af afbrudte og fuldførte")
 
-    if all(col in data.columns for col in ['2015', '2020', '2023', 'Type']):
-        scatter_plot_3d(data, '2015', '2020', '2023', title="2015-2023 Trends Colored by Type", color_column='Type')
+    if '2015' in df.columns:
+        boxplot(df, '2015', title="Niveau i 2015")
+    if '2020' in df.columns:
+        boxplot(df, '2020', title="Niveau i 2020")
+    if '2023' in df.columns:
+        boxplot(df, '2023', title="Niveau i 2023")
+
+    if all(col in df.columns for col in ['2015', '2020', '2023', 'Type']):
+        scatter_plot_3d(df, '2015', '2020', '2023', title="Tendenser 2015–2023", color_column='Type')
