@@ -11,6 +11,7 @@ from stats import dispersion
 from stats import central_tendency
 from stats import visualization
 
+
 # Function to display the homepage content
 def show_homepage():
     st.header("Uddannelse Data Analysis")
@@ -18,12 +19,14 @@ def show_homepage():
 # Main function that runs the app
 def main():
     st.sidebar.title("Navigation")
-    page = st.sidebar.selectbox("Choose a page", ["Homepage", "Visualization"])
+    page = st.sidebar.selectbox("Choose a page", ["Homepage", "Visualization","Institutioner"])
 
     if page == "Homepage":
         show_homepage()
     elif page == "Visualization":
         visualization.show_graphs()
-
+    elif page == "Institutioner":
+        visualization.show_graphsInstitutioner()
+        
 if __name__ == "__main__":
     main()
