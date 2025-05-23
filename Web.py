@@ -33,6 +33,7 @@ def main():
             visualization.show_prediction_model()
         elif page == "Institutioner":
             visualization.show_graphsInstitutioner()
+            visualization.show_graphsInstitutionerSelvValgt()
     except Exception as e:
         st.error(f"⚠️ Fejl under visning af siden: {e}")
 
