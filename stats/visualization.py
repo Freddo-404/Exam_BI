@@ -132,15 +132,95 @@ def show_graphsInstitutioner():
 
 
 
+def show_graphsInstitutionerSelvValgt():
+    st.title("Analyse af Frafald pr. Institution")
+
+    # Læs og rens data
+    data = pd.read_excel("Streamlit/Data/Afbrudte_og_fuldførte_institution.xlsx")
+    data = data[~data["Institution"].isin(["Institution", "HovedInstitutionTx", "Hovedinstitution"])]
+    # Fylder NaN-værdier med 0
+    data[["Afbrudte", "Fuldførte"]] = data[["Afbrudte", "Fuldførte"]].fillna(0)
+    # Fjerner rækker hvor både Afbrudte og Fuldførte er 0, da institutioner hvor begge er 0 
+    # indikerer, at instituionen ikke er oprettet endnu, eller er blevet nedlagt
+    # og derfor ikke er relevant for analysen
+    data = data[~((data["Afbrudte"] == 0) & (data["Fuldførte"] == 0))]
+
+    # Beregn frafaldsrate
+    data["Frafaldsrate"] = 100 * data["Afbrudte"] / (data["Afbrudte"] + data["Fuldførte"])
+
+    # Bruger vælger institutionstype
+    st.header("Vælg institutionstype")
+    st.markdown("""
+    **Bemærk:**  
+    Nogle institutioner har 0 fuldførte, men et højt antal afbrudte.  
+    Dette kan skyldes, at institutionen er blevet **nedlagt** i løbet af perioden,  
+    og derfor ikke har haft mulighed for at fuldføre forløb.
+    
+    Hvis en institutionstype har få afbrudte og eller fuldførte og ingen fuldførte og eller afbrudte, 
+    skyldes det, at der har været mindre end 5 studerende der har fuldført eller afbrudt.
+    Dette er for at beskytte anonymiteten af de studerende.
+    """)
+
+    valgte_institutionstyper = sorted(data["InstitutionType"].unique())
+    valgt_insttype = st.selectbox("Vælg institutionstype", valgte_institutionstyper)
+
+    # Filtrér efter valgt institutionstype
+    inst_data = data[data["InstitutionType"] == valgt_insttype]
+
+    # Vælg år eller 'Alle år'
+    mulige_år = sorted(inst_data["År"].dropna().unique())
+    valgt_år = st.selectbox("Vælg år (eller se alle)", ["Alle år"] + list(map(str, mulige_år)))
+
+    if valgt_år != "Alle år":
+        inst_data = inst_data[inst_data["År"] == int(valgt_år)]
+
+    if inst_data.empty:
+        st.warning("Ingen data fundet for det valgte valg.")
+        return
+
+    # Aggregér hvis alle år
+    if valgt_år == "Alle år":
+        samlet = inst_data[["Afbrudte", "Fuldførte"]].sum()
+        frafald = 100 * samlet["Afbrudte"] / (samlet["Afbrudte"] + samlet["Fuldførte"])
+    else:
+        samlet = inst_data.iloc[0]
+        frafald = samlet["Frafaldsrate"]
+
+    st.subheader(f"Statistik for: {valgt_insttype} ({valgt_år})")
+    st.metric("Fuldførte", int(samlet["Fuldførte"]))
+    st.metric("Afbrudte", int(samlet["Afbrudte"]))
+    st.metric("Frafaldsrate (%)", round(frafald, 2))
+
+    st.divider()
+
+    # Bar chart: Fuldførte og afbrudte
+    st.subheader("Sammenligning af Fuldførte og Afbrudte")
+    if valgt_år == "Alle år":
+        bar_data = pd.DataFrame({
+            "Status": ["Fuldførte", "Afbrudte"],
+            "Antal": [samlet["Fuldførte"], samlet["Afbrudte"]]
+        })
+    else:
+        bar_data = inst_data.melt(id_vars=["InstitutionType", "År"], value_vars=["Fuldførte", "Afbrudte"],
+                                  var_name="Status", value_name="Antal")
+
+    fig = px.bar(bar_data, x="Status", y="Antal", title=f"Fuldførte vs. Afbrudte ({valgt_insttype} - {valgt_år})")
+    st.plotly_chart(fig)
+
+    st.divider()
+
+    # Sammenlign frafaldsrate med andre institutionstyper (kun hvis 'Alle år' er valgt)
+    if valgt_år == "Alle år":
+        st.subheader("Sammenlign frafaldsrate med andre institutionstyper")
+        fig2 = px.box(data, x="InstitutionType", y="Frafaldsrate", title="Frafaldsrate fordelt på InstitutionType", points="all")
+        st.plotly_chart(fig2)
+
+
+
 
 
 # VISUALISERING: Faglinje og grafer
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly.express as px
-#Jeg forsøger igne
+
 # Funktion: Histogram
 def histogram(data, column_name, title="Histogram"):
     fig, ax = plt.subplots()

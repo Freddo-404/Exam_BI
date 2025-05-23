@@ -33,6 +33,7 @@ def main():
             visualization.show_prediction_model()
         elif page == "Institutioner":
             visualization.show_graphsInstitutioner()
+            visualization.show_graphsInstitutionerSelvValgt()
         elif page == "Kortvisning":
             visualization.show_map_institution()
     except Exception as e:
