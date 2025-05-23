@@ -7,6 +7,62 @@ import os
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, r2_score
 
+def show_map_institution():
+    st.header("📍 Kortvisning: Frafald og fuldførelse pr. institution")
+
+    # 1. Læs originalfilen direkte
+    file_path = "Streamlit/Data/Afbrudte_og_fuldførte_institution.xlsx"
+    df = pd.read_excel(file_path)
+
+    # 2. Gruppér efter Subinstitution og summér
+    grouped = df.groupby("Subinstitution")[["Afbrudte", "Fuldførte"]].sum().reset_index()
+
+    # 3. Tilføj koordinater via mapping
+    coordinates_map = {
+        "Københavns Professionshøjskole": (55.6909, 12.5529),
+        "Professionshøjskolen VIA University College": (56.1629, 10.2039),
+        "Erhvervsakademi Aarhus": (56.1629, 10.2039),
+        "Professionshøjskolen University College Nordjylland": (57.0488, 9.9217),
+        "Erhvervsakademiet Copenhagen Business Academy": (55.6759, 12.5655),
+        "University College Lillebælt": (55.4038, 10.4024),
+        "University College Sjælland": (55.4377, 11.5666),
+        "University College Syddanmark": (55.4904, 9.4722),
+        "Erhvervsakademi Dania": (56.4604, 10.0364),
+        "Erhvervsakademi SydVest": (55.4765, 8.4594),
+        "Erhvervsakademi MidtVest": (56.3615, 8.6164),
+        "Erhvervsakademi Sjælland": (55.4580, 11.5820),
+        "IBA Erhvervsakademi Kolding": (55.4910, 9.4720),
+        "Erhvervsakademi Bornholm": (55.1037, 14.7065),
+        "Erhvervsakademi Nordjylland": (57.0488, 9.9217),
+    }
+
+    grouped["lat"] = grouped["Subinstitution"].map(lambda x: coordinates_map.get(x, (None, None))[0])
+    grouped["lon"] = grouped["Subinstitution"].map(lambda x: coordinates_map.get(x, (None, None))[1])
+
+    grouped = grouped.dropna(subset=["lat", "lon"])
+
+    if grouped.empty:
+        st.warning("Ingen koordinater matchede institutionerne. Tilføj flere til mapping-tabellen.")
+        return
+
+    # 4. Vis kortet
+    fig = px.scatter_mapbox(
+        grouped,
+        lat="lat",
+        lon="lon",
+        size="Afbrudte",
+        color="Fuldførte",
+        hover_name="Subinstitution",
+        hover_data=["Afbrudte", "Fuldførte"],
+        color_continuous_scale="Viridis",
+        size_max=25,
+        zoom=6,
+        mapbox_style="open-street-map",
+        title="Frafald og fuldførelse fordelt på institution"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
 def histogram(data, column_name, title="Histogram"):
     fig, ax = plt.subplots()
     ax.hist(data[column_name], bins=10, edgecolor='black')
