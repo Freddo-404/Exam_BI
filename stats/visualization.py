@@ -8,16 +8,15 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, r2_score
 
 def show_map_institution():
-    st.header("📍 Kortvisning: Frafald og fuldførelse pr. institution")
+    st.header("📍 Kortvisning: Institutioner")
 
-    # 1. Læs originalfilen direkte
+    # Læs og forbered data
     file_path = "Streamlit/Data/Afbrudte_og_fuldførte_institution.xlsx"
     df = pd.read_excel(file_path)
-
-    # 2. Gruppér efter Subinstitution og summér
     grouped = df.groupby("Subinstitution")[["Afbrudte", "Fuldførte"]].sum().reset_index()
+    grouped["Frafaldsprocent (%)"] = (grouped["Afbrudte"] / (grouped["Afbrudte"] + grouped["Fuldførte"])) * 100
+    grouped["Frafaldsprocent (%)"] = grouped["Frafaldsprocent (%)"].round(2)
 
-    # 3. Tilføj koordinater via mapping
     coordinates_map = {
         "Københavns Professionshøjskole": (55.6909, 12.5529),
         "Professionshøjskolen VIA University College": (56.1629, 10.2039),
@@ -38,30 +37,45 @@ def show_map_institution():
 
     grouped["lat"] = grouped["Subinstitution"].map(lambda x: coordinates_map.get(x, (None, None))[0])
     grouped["lon"] = grouped["Subinstitution"].map(lambda x: coordinates_map.get(x, (None, None))[1])
-
     grouped = grouped.dropna(subset=["lat", "lon"])
 
     if grouped.empty:
-        st.warning("Ingen koordinater matchede institutionerne. Tilføj flere til mapping-tabellen.")
+        st.warning("Ingen koordinater matchede institutionerne.")
         return
 
-    # 4. Vis kortet
+    # Valgmulighed til at vælge visning
+    visning = st.selectbox(
+        "Vælg hvad kortet skal vise farve ud fra:",
+        ("Frafaldsprocent (%)", "Afbrudte", "Fuldførte")
+    )
+
+    color_scale = {
+        "Frafaldsprocent (%)": "Reds",
+        "Afbrudte": "Oranges",
+        "Fuldførte": "Blues"
+    }
+
     fig = px.scatter_mapbox(
         grouped,
         lat="lat",
         lon="lon",
         size="Afbrudte",
-        color="Fuldførte",
+        color=visning,
         hover_name="Subinstitution",
-        hover_data=["Afbrudte", "Fuldførte"],
-        color_continuous_scale="Viridis",
+        hover_data=["Afbrudte", "Fuldførte", "Frafaldsprocent (%)"],
+        color_continuous_scale=color_scale[visning],
         size_max=25,
         zoom=6,
-        mapbox_style="open-street-map",
-        title="Frafald og fuldførelse fordelt på institution"
+        mapbox_style="carto-darkmatter",
+        title=f"Visning: {visning}"
     )
+    fig.update_layout(
+    height=700,
+    margin={"r":0,"t":40,"l":0,"b":0}
+)
 
     st.plotly_chart(fig, use_container_width=True)
+
 
 def histogram(data, column_name, title="Histogram"):
     fig, ax = plt.subplots()
