@@ -4,11 +4,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 import os
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_absolute_error, r2_score
+import numpy as np
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.metrics import mean_absolute_error, r2_score, silhouette_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, DBSCAN
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA
 
 def show_map_institution():
     st.header("📍 Kortvisning: Frafald og fuldførelse pr. institution")
@@ -529,3 +533,147 @@ def show_prediction_model():
     ax_fu.legend()
     st.pyplot(fig_fu)
 
+
+
+def show_uddannelse_prediction_model():
+    st.header("📈 Forudsigelse og Analyse af Frafald")
+    
+    file_path = "Streamlit/Data/Uddannelse_combined.xlsx"
+    df = pd.read_excel(file_path)
+
+    fuldfort = df[df['Type'] == 'Fuldført']
+    afbrudt = df[df['Type'] == 'Afbrudt']
+    years = list(range(2015, 2025))
+
+    # Aggregering
+    agg_fuldfort = fuldfort.groupby(['FagLinjer'])[years].sum().reset_index()
+    agg_afbrudt = afbrudt.groupby(['FagLinjer'])[years].sum().reset_index()
+    merged = pd.merge(agg_fuldfort, agg_afbrudt, on='FagLinjer', suffixes=('_fuldfort', '_afbrudt'))
+    merged['Total_fuldfort'] = merged[[f"{y}_fuldfort" for y in years]].sum(axis=1)
+    merged['Total_afbrudt'] = merged[[f"{y}_afbrudt" for y in years]].sum(axis=1)
+    merged['Frafaldsrate'] = merged['Total_afbrudt'] / (merged['Total_fuldfort'] + merged['Total_afbrudt'])
+
+    for y in years:
+        merged[f'{y}_ratio'] = merged[f'{y}_afbrudt'] / (merged[f'{y}_fuldfort'] + merged[f'{y}_afbrudt'] + 1e-6)
+
+    # Tabs for opdeling
+    tabs = st.tabs(["📊 Modellering", "🔍 Klyngeanalyse", "📈 Forudsigelse 2025", "📘 Baggrund"])
+
+    # === MODELTAB ===
+    with tabs[0]:
+        st.text_input("Beskrivelse af analysen", "Skriv tekst her")
+
+        features = merged[
+            [f"{y}_fuldfort" for y in years] +
+            [f"{y}_afbrudt" for y in years] +
+            [f"{y}_ratio" for y in years]
+        ]
+        target = merged['Frafaldsrate']
+        X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.3, random_state=42)
+
+        models = {
+            "Linear Regression": LinearRegression(),
+            "Ridge Regression": Ridge(alpha=1.0),
+            "Lasso Regression": Lasso(alpha=0.1),
+            "Random Forest": RandomForestRegressor(n_estimators=100, random_state=42)
+        }
+
+        for name, model in models.items():
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            r2 = r2_score(y_test, y_pred)
+
+            st.subheader(f"{name} – R²: {r2:.3f}")
+            fig, ax = plt.subplots()
+            ax.scatter(y_test, y_pred, alpha=0.7)
+            ax.plot([0, 1], [0, 1], 'r--')
+            ax.set_xlabel("True Frafaldsrate")
+            ax.set_ylabel("Predicted")
+            st.pyplot(fig)
+
+    # === KLYNGETAB ===
+    with tabs[1]:
+        st.text_input("Beskrivelse af klyngeanalyse", "Skriv tekst her")
+        st.subheader("PCA + DBSCAN Klyngeanalyse")
+
+        X_cluster = merged[['Frafaldsrate']]
+        X_scaled = StandardScaler().fit_transform(X_cluster)
+        db = DBSCAN(eps=0.5, min_samples=2)
+        labels = db.fit_predict(X_scaled)
+
+        X_pca = StandardScaler().fit_transform(
+            merged[[f"{y}_fuldfort" for y in years] + [f"{y}_afbrudt" for y in years]]
+        )
+        pca = PCA(n_components=2)
+        components = pca.fit_transform(X_pca)
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        unique_labels = np.unique(labels)
+        colors = plt.cm.tab10(np.linspace(0, 1, len(unique_labels)))
+        for label, color in zip(unique_labels, colors):
+            mask = labels == label
+            ax.scatter(components[mask, 0], components[mask, 1], label=f"Klynge {label}", color=color)
+            for i in np.where(mask)[0]:
+                ax.text(components[i, 0], components[i, 1], merged.iloc[i]['FagLinjer'], fontsize=8)
+        ax.set_title("PCA + DBSCAN Klyngeanalyse")
+        ax.set_xlabel("Komponent 1")
+        ax.set_ylabel("Komponent 2")
+        ax.legend()
+        st.pyplot(fig)
+
+    # === FORUDSIGELSE 2025 ===
+    with tabs[2]:
+        st.text_input("Forudsigelse for 2025", "Skriv tekst her")
+        st.subheader("Forudsigelse 2025 per faglinje")
+
+        pivot_df = afbrudt.pivot_table(index='FagLinjer', values=years, aggfunc='sum').fillna(0)
+        X = np.array(years).reshape(-1, 1)
+        faglinje_predictions = {}
+        for fag, row in pivot_df.iterrows():
+            y = row.values
+            lr = LinearRegression().fit(X, y)
+            rf = RandomForestRegressor(n_estimators=100, random_state=42).fit(X, y)
+            faglinje_predictions[fag] = {
+                'LR_2025': lr.predict([[2025]])[0],
+                'RF_2025': rf.predict([[2025]])[0],
+                'LR_R2': lr.score(X, y),
+                'RF_R2': r2_score(y, rf.predict(X))
+            }
+
+        pred_df = pd.DataFrame(faglinje_predictions).T
+        pred_df['Forskel_2025'] = pred_df['RF_2025'] - pred_df['LR_2025']
+        pred_df['Forskel_pct'] = (pred_df['Forskel_2025'] / pred_df['LR_2025']) * 100
+        st.dataframe(pred_df.sort_values(by='RF_2025', ascending=False).round(2).head(10))
+
+        fig2, ax2 = plt.subplots(figsize=(10, 5))
+        sorted_df = pred_df.sort_values(by='RF_2025', ascending=False)
+        ax2.bar(range(len(sorted_df.index[:10])), sorted_df['RF_2025'].head(10), color='skyblue')
+        ax2.set_title("Top 10: RF-forudsagt frafald i 2025")
+        ax2.set_ylabel("Antal studerende")
+        ax2.set_xticks(range(len(sorted_df.index[:10])))
+        ax2.set_xticklabels(sorted_df.index[:10], rotation=45, ha='right')
+        st.pyplot(fig2)
+
+    # === BAGGRUND ===
+    with tabs[3]:
+        st.markdown("""\
+### Baggrund: Frafald blandt pædagogstuderende
+
+Regeringen har foreslået en ny erhvervsrettet ungdomsuddannelse, EPX, der skal give en mere direkte vej til pædagoguddannelsen. Formålet er at reducere frafaldet ved at tilbyde en praksisnær tilgang. Dog udtrykker fagfolk bekymring for, at en kortere uddannelsesvej kan føre til mindre modne og fagligt forberedte studerende, hvilket potentielt kan øge frafaldet yderligere.
+
+[Kilde: Politiken – Flere pædagogstuderende dropper ud – nu reagerer ministeren](https://politiken.dk/danmark/art9814464/Flere-p%C3%A6dagogstuderende-dropper-ud-%E2%80%93-nu-reagerer-ministeren)
+""")
+
+        st.markdown("""\
+### 📘 Resumé: Frafald på sundhedsuddannelserne ved VIA University College
+
+Analysen fra Danmarks Evalueringsinstitut (EVA) identificerer flere centrale årsager til, at studerende på sundhedsuddannelserne ved VIA University College vælger at afbryde deres uddannelse:
+
+- **Udfordringer med faglig og social integration**: Mange studerende oplever vanskeligheder med at tilpasse sig det akademiske niveau og opbygge sociale relationer.
+- **Manglende forberedelse fra tidligere uddannelser**: Studerende fra fx HF eller med lave karakterer fra folkeskolen har højere frafald.
+- **Personlige og økonomiske forhold**: Helbred, økonomi og familieforhold påvirker studiegennemførelse.
+- **Manglende støtte og vejledning**: Begrænset adgang til vejledning forværrer problemer.
+
+Kilde: Danmarks Evalueringsinstitut (EVA), *Analyse af frafald på VIA University College – Sundhed*, 2016.  
+[Se hele rapporten her](https://eva.dk/Media/638409044635990892/Analyse%20af%20frafald%20p%C3%A5%20VIA%20University%20College%20-%20Sundhed.pdf)
+""")
