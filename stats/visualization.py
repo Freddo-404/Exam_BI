@@ -391,15 +391,6 @@ def show_prediction_model():
     st.subheader("Tabel med forudsagte værdier for 2025")
     st.dataframe(df_vis)
 
-    st.subheader("Top 20 fagretninger – forudsagt frafald i 2025")
-    st.bar_chart(df_vis.sort_values("2025_afbrudt (forudsagt)", ascending=False).head(20).set_index("FagRetning")["2025_afbrudt (forudsagt)"])
-
-    st.subheader("Top 20 fagretninger – forudsagt fuldført i 2025")
-    st.bar_chart(df_vis.sort_values("2025_fuldført (forudsagt)", ascending=False).head(20).set_index("FagRetning")["2025_fuldført (forudsagt)"])
-
-    st.subheader("Top 20 fagretninger – forudsagt frafaldsprocent i 2025")
-    st.bar_chart(df_vis.sort_values("Frafaldsprocent_2025", ascending=False).head(20).set_index("FagRetning")["Frafaldsprocent_2025"])
-
     # VISUALISERING af historik og forudsigelse
     st.subheader("Visualisering af regression for valgt fagretning (separat for afbrudt og fuldført)")
     fagretninger = df_vis["FagRetning"].dropna().unique()
