@@ -362,7 +362,7 @@ def show_prediction_model():
     model_ab.fit(X_ab_train, y_ab_train)
     X_ab_2025 = df_afbrudt[[str(y) for y in range(2016, 2025)]].copy()
     X_ab_2025.columns = train_features
-    y_pred_ab_2025 = model_ab.predict(X_ab_2025)
+    y_pred_ab_2025 = model_ab.predict(X_ab_2025).round().astype(int)
 
     # MODEL 2: Fuldført
     X_fu_train = df_fuldført[train_features]
@@ -371,7 +371,7 @@ def show_prediction_model():
     model_fu.fit(X_fu_train, y_fu_train)
     X_fu_2025 = df_fuldført[[str(y) for y in range(2016, 2025)]].copy()
     X_fu_2025.columns = train_features
-    y_pred_fu_2025 = model_fu.predict(X_fu_2025)
+    y_pred_fu_2025 = model_fu.predict(X_fu_2025).round().astype(int)
 
     # VISNING
     df_vis = df_afbrudt[["Uddannelse", "FagLinjer", "FagRetning", "2024"]].copy()
@@ -434,3 +434,4 @@ def show_prediction_model():
     ax_fu.set_ylabel("Antal studerende")
     ax_fu.legend()
     st.pyplot(fig_fu)
+
