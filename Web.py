@@ -34,6 +34,8 @@ def main():
         elif page == "Institutioner":
             visualization.show_graphsInstitutioner()
             visualization.show_graphsInstitutionerSelvValgt()
+            visualization.show_institution_clustering()
+            visualization.show_feature_importance()
         elif page == "Kortvisning":
             visualization.show_map_institution()
     except Exception as e:
