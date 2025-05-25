@@ -539,8 +539,6 @@ def show_prediction_model():
     ax_fu.legend()
     st.pyplot(fig_fu)
 
-
-
 def show_uddannelse_prediction_model():
     st.header("📈 Forudsigelse og Analyse af Frafald")
     
@@ -565,38 +563,7 @@ def show_uddannelse_prediction_model():
     # Tabs for opdeling
     tabs = st.tabs(["📊 Modellering", "🔍 Klyngeanalyse", "📈 Forudsigelse 2025", "📘 Baggrund"])
 
-    # === MODELTAB ===
-    with tabs[0]:
-        st.text_input("Beskrivelse af analysen", "Skriv tekst her")
-
-        features = merged[
-            [f"{y}_fuldfort" for y in years] +
-            [f"{y}_afbrudt" for y in years] +
-            [f"{y}_ratio" for y in years]
-        ]
-        target = merged['Frafaldsrate']
-        X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.3, random_state=42)
-
-        models = {
-            "Linear Regression": LinearRegression(),
-            "Ridge Regression": Ridge(alpha=1.0),
-            "Lasso Regression": Lasso(alpha=0.1),
-            "Random Forest": RandomForestRegressor(n_estimators=100, random_state=42)
-        }
-
-        for name, model in models.items():
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
-            r2 = r2_score(y_test, y_pred)
-
-            st.subheader(f"{name} – R²: {r2:.3f}")
-            fig, ax = plt.subplots()
-            ax.scatter(y_test, y_pred, alpha=0.7)
-            ax.plot([0, 1], [0, 1], 'r--')
-            ax.set_xlabel("True Frafaldsrate")
-            ax.set_ylabel("Predicted")
-            st.pyplot(fig)
-
+   
     # === KLYNGETAB ===
     with tabs[1]:
         st.text_input("Beskrivelse af klyngeanalyse", "Skriv tekst her")
@@ -683,3 +650,6 @@ Analysen fra Danmarks Evalueringsinstitut (EVA) identificerer flere centrale år
 Kilde: Danmarks Evalueringsinstitut (EVA), *Analyse af frafald på VIA University College – Sundhed*, 2016.  
 [Se hele rapporten her](https://eva.dk/Media/638409044635990892/Analyse%20af%20frafald%20p%C3%A5%20VIA%20University%20College%20-%20Sundhed.pdf)
 """)
+
+
+
