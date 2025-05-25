@@ -22,7 +22,7 @@ def main():
     st.set_page_config(page_title="Uddannelse BI", layout="wide")
     st.sidebar.title("Navigation")
 
-    page = st.sidebar.selectbox("Vælg en side", ["Homepage", "Visualization", "Prediction", "Institutioner", "Kortvisning"])
+    page = st.sidebar.selectbox("Vælg en side", ["Homepage", "Visualization", "Prediction", "Institutioner", "Kortvisning", "Konklusion"])
 
     try:
         if page == "Homepage":
@@ -39,6 +39,8 @@ def main():
 
         elif page == "Kortvisning":
             visualization.show_map_institution()
+        elif page == "Konklusion":
+            visualization.render_conclusion_page()
     except Exception as e:
         st.error(f"⚠️ Fejl under visning af siden: {e}")
 

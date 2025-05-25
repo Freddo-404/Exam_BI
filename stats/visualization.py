@@ -106,6 +106,14 @@ def show_map_institution():
 
     st.plotly_chart(fig, use_container_width=True)
 
+    st.markdown("""
+> 📉 **Fald i ansøgninger til Københavns Professionshøjskole**  
+> Ansøgertallet er faldet markant, især på velfærdsuddannelser som pædagogik, sygepleje og socialrådgivning.  
+> Udviklingen vækker bekymring for rekrutteringen af fremtidens fagpersonale.  
+>  
+> 🔗 [Kilde: Berlingske, maj 2025](https://www.berlingske.dk/danmark/ansoegninger-til-koebenhavns-professionshoejskole-falder-markant)
+""")
+
 
 def histogram(data, column_name, title="Histogram"):
     fig, ax = plt.subplots()
@@ -561,7 +569,7 @@ def show_uddannelse_prediction_model():
         merged[f'{y}_ratio'] = merged[f'{y}_afbrudt'] / (merged[f'{y}_fuldfort'] + merged[f'{y}_afbrudt'] + 1e-6)
 
     # Tabs for opdeling
-    tabs = st.tabs(["📊 Modellering", "🔍 Klyngeanalyse", "📈 Forudsigelse 2025", "📘 Baggrund"])
+    tabs = st.tabs(["Modellering", "🔍 Klyngeanalyse", "Forudsigelse 2025", "Baggrund"])
 
    
     # === KLYNGETAB ===
@@ -650,6 +658,45 @@ Analysen fra Danmarks Evalueringsinstitut (EVA) identificerer flere centrale år
 Kilde: Danmarks Evalueringsinstitut (EVA), *Analyse af frafald på VIA University College – Sundhed*, 2016.  
 [Se hele rapporten her](https://eva.dk/Media/638409044635990892/Analyse%20af%20frafald%20p%C3%A5%20VIA%20University%20College%20-%20Sundhed.pdf)
 """)
+        
+
+def render_conclusion_page():
+
+    st.title("Konklusion & Anbefalinger")
+
+    st.subheader("Overordnede tendenser")
+    st.markdown("""
+- Der er **en klar geografisk skævhed** i frafaldsdata, hvor visse regioner og uddannelsesinstitutioner oplever markant højere frafald end andre.
+- Frafaldsraten er særligt høj på **velfærdsuddannelser**, som pædagogik, socialrådgivning og sygepleje – samtidig med at der er et fald i nye ansøgere.
+- Vores analyser viser, at **frafald og lavt optag følges ad**, hvilket kan føre til alvorlige rekrutteringsproblemer i samfundskritiske professioner.
+- Modellerne viser, at Random Forest præsterer bedre end lineære modeller ift. at forudsige frafald pr. faglinje.
+""")
+
+    st.subheader("Geografisk og faglig sammenhæng")
+    st.markdown("""
+- Områder med højt frafald korrelerer med lavere søgning og lavere gennemførsel.
+- Især **Hovedstadsområdet og Region Sjælland** viser tendenser til lavere gennemførelse på specifikke fag.
+- **Fag som humaniora og sundhedsuddannelser** viser både højt frafald og stor forskel i modelprognoser – et signal om ustabilitet i udviklingen.
+""")
+
+    st.subheader("Anbefalinger og mulige tiltag")
+    st.markdown("""
+1. **Styrket vejledning og fastholdelsesinitiativer**  
+   Indsats tidligt i forløbene med mentorordninger og bedre introduktionsforløb, særligt på frafaldsramte uddannelser.
+
+2. **Målrettet geografisk indsats**  
+   Regionale kampagner og investeringer i områder med lav søgning og højt frafald – fx boligstøtte, pendlerordninger eller campusmiljøer.
+
+3. **Rekruttering til velfærdsuddannelser**  
+   National oplysningskampagne om pædagog-, lærer- og sygeplejerskeuddannelsernes samfundsværdi og jobmuligheder.
+
+4. **Dataovervågning og modelbaseret forudsigelse**  
+   Anvend modeller som Random Forest i fremtidige analyser til at identificere risikofag og skærpe den politiske opmærksomhed.
+""")
+
+    st.markdown("""---""")
+    st.caption("Datagrundlag: Uddannelsesstatistik 2015–2024, modelanalyse & prognoser.")
+
 
 
 
