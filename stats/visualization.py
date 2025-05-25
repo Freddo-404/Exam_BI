@@ -6,6 +6,9 @@ import plotly.express as px
 import os
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn.ensemble import RandomForestRegressor
 
 def show_map_institution():
     st.header("📍 Kortvisning: Frafald og fuldførelse pr. institution")
@@ -216,6 +219,97 @@ def show_graphsInstitutionerSelvValgt():
         st.plotly_chart(fig2)
 
 
+
+
+
+def show_institution_clustering():
+    st.header("Clustering af institutioner baseret på frafald og fuldførelse")
+    df = pd.read_excel("Streamlit/Data/Afbrudte_og_fuldførte_institution.xlsx")
+    df = df[~df["Institution"].isin(["Institution", "HovedInstitutionTx", "Hovedinstitution"])]
+    df[["Afbrudte", "Fuldførte"]] = df[["Afbrudte", "Fuldførte"]].fillna(0)
+    df = df[~((df["Afbrudte"] == 0) & (df["Fuldførte"] == 0))]
+    df["dropout_rate"] = df["Afbrudte"] / (df["Afbrudte"] + df["Fuldførte"])
+
+    # Select features for clustering
+    features = df[["Afbrudte", "Fuldførte", "dropout_rate"]]
+    features = features.fillna(0)
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(features)
+
+    # KMeans clustering
+    kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+    df["Cluster"] = kmeans.fit_predict(X_scaled)
+
+    st.write("Cluster centers (scaled):", kmeans.cluster_centers_)
+
+    # Visualize clusters
+    fig = px.scatter(df, x="Afbrudte", y="Fuldførte", color="Cluster",
+                     hover_data=["Subinstitution", "dropout_rate"],
+                     title="Institutioner grupperet efter frafald og fuldførelse")
+    st.plotly_chart(fig)
+
+
+
+
+def show_feature_importance():
+    st.header("Feature importance for frafaldsrate (inkl. region)")
+
+    # Indlæs data
+    df = pd.read_excel("Streamlit/Data/Afbrudte_og_fuldførte_institution.xlsx")
+    df = df[~df["Institution"].isin(["Institution", "HovedInstitutionTx", "Hovedinstitution"])]
+    df[["Afbrudte", "Fuldførte"]] = df[["Afbrudte", "Fuldførte"]].fillna(0)
+    df = df[~((df["Afbrudte"] == 0) & (df["Fuldførte"] == 0))]
+    df["dropout_rate"] = df["Afbrudte"] / (df["Afbrudte"] + df["Fuldførte"])
+
+    # Tilføj region
+    region_map = {
+        "Københavns Professionshøjskole": "Sjælland",
+        "Professionshøjskolen VIA University College": "Jylland",
+        "Erhvervsakademi Aarhus": "Jylland",
+        "Professionshøjskolen University College Nordjylland": "Jylland",
+        "Erhvervsakademiet Copenhagen Business Academy": "Sjælland",
+        "University College Lillebælt": "Fyn",
+        "University College Sjælland": "Sjælland",
+        "University College Syddanmark": "Jylland",
+        "Erhvervsakademi Dania": "Jylland",
+        "Erhvervsakademi SydVest": "Jylland",
+        "Erhvervsakademi MidtVest": "Jylland",
+        "Erhvervsakademi Sjælland": "Sjælland",
+        "IBA Erhvervsakademi Kolding": "Jylland",
+        "Erhvervsakademi Bornholm": "Bornholm",
+        "Erhvervsakademi Nordjylland": "Jylland",
+    }
+    df["Region"] = df["Subinstitution"].map(region_map)
+    df = df.dropna(subset=["Region", "dropout_rate"])
+
+    # Encode categorical features (Region, År, InstitutionType)
+    X = pd.get_dummies(df[["År", "InstitutionType", "Region"]])
+    y = df["dropout_rate"]
+
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X, y)
+    y_pred = model.predict(X)
+
+    importances = pd.Series(model.feature_importances_, index=X.columns)
+    importances_percent = importances * 100  # Show as percent
+
+    # Use Plotly for a better bar chart
+    importances_df = importances_percent.sort_values(ascending=False).reset_index()
+    importances_df.columns = ["Feature", "Importance (%)"]
+    fig = px.bar(importances_df, x="Feature", y="Importance (%)", title="Feature Importance for Dropout Rate")
+    st.plotly_chart(fig)
+
+    st.write("De vigtigste features for at forudsige frafaldsrate (%):", importances_df.head(10))
+
+    # Show predictions vs. actual
+    df["Predicted_dropout_rate"] = y_pred
+    st.subheader("Faktisk vs. forudsagt frafaldsrate")
+    st.dataframe(df[["År", "InstitutionType", "Region", "dropout_rate", "Predicted_dropout_rate"]])
+
+    # Show R2 score
+    from sklearn.metrics import r2_score
+    r2 = r2_score(y, y_pred)
+    st.write(f"R²-score for modellen: {r2:.3f}")
 
 
 
