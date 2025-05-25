@@ -339,10 +339,10 @@ def show_graphs():
     if all(col in df.columns for col in ['2015', '2020', '2023', 'Type']):
         scatter_plot_3d(df, '2015', '2020', '2023', title="Tendenser 2015–2023", color_column='Type')
 
-
 def show_prediction_model():
-    st.header("Forudsig frafald i 2024 og 2025 med lineær regression")
+    st.header("Forudsig frafald og fuldførelse i 2025 med lineær regression")
 
+    # Indlæs data
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     excel_path = os.path.join(base_dir, 'Streamlit', 'Data', 'Uddannelse_combined.xlsx')
     df = pd.read_excel(excel_path)
@@ -351,54 +351,95 @@ def show_prediction_model():
     all_years = [str(y) for y in range(2015, 2025)]
     df[all_years] = df[all_years].apply(pd.to_numeric, errors='coerce').fillna(0)
 
-    # Filtrér kun "Afbrudt" rækker til modellen
-    df_afbrudt = df[df["Type"] == "Afbrudt"].copy()
+    df_afbrudt = df[df["Type"] == "Afbrudt"].copy().reset_index(drop=True)
+    df_fuldført = df[df["Type"] == "Fuldført"].copy().reset_index(drop=True)
 
-    # Model for 2024
-    feature_cols_2024 = [str(y) for y in range(2015, 2024)]
-    X_2024 = df_afbrudt[feature_cols_2024]
-    y_2024 = df_afbrudt["2024"]
+    # MODEL 1: Afbrudt
+    train_features = [str(y) for y in range(2015, 2024)]
+    X_ab_train = df_afbrudt[train_features]
+    y_ab_train = df_afbrudt["2024"]
+    model_ab = LinearRegression()
+    model_ab.fit(X_ab_train, y_ab_train)
+    X_ab_2025 = df_afbrudt[[str(y) for y in range(2016, 2025)]].copy()
+    X_ab_2025.columns = train_features
+    y_pred_ab_2025 = model_ab.predict(X_ab_2025)
 
-    model_2024 = LinearRegression()
-    model_2024.fit(X_2024, y_2024)
-    y_pred_2024 = model_2024.predict(X_2024)
+    # MODEL 2: Fuldført
+    X_fu_train = df_fuldført[train_features]
+    y_fu_train = df_fuldført["2024"]
+    model_fu = LinearRegression()
+    model_fu.fit(X_fu_train, y_fu_train)
+    X_fu_2025 = df_fuldført[[str(y) for y in range(2016, 2025)]].copy()
+    X_fu_2025.columns = train_features
+    y_pred_fu_2025 = model_fu.predict(X_fu_2025)
 
-    # Model for 2025 (forudsigelse baseret på tidligere år)
-    feature_cols_2025 = [str(y) for y in range(2016, 2025)]
-    X_2025 = df_afbrudt[feature_cols_2025]
-    model_2025 = LinearRegression()
-    model_2025.fit(X_2025, df_afbrudt["2024"])
-    y_pred_2025 = model_2025.predict(X_2025)
+    # VISNING
+    df_vis = df_afbrudt[["Uddannelse", "FagLinjer", "FagRetning", "2024"]].copy()
+    df_vis.rename(columns={"2024": "2024_afbrudt"}, inplace=True)
+    df_vis["2025_afbrudt (forudsagt)"] = y_pred_ab_2025
 
-    # Saml resultater
-    df_vis = df_afbrudt[["Uddannelse", "FagLinjer", "FagRetning"]].copy()
-    df_vis["2024_forudsagt"] = y_pred_2024
-    df_vis["2024_faktisk"] = y_2024
-    df_vis["Forskel"] = df_vis["2024_forudsagt"] - df_vis["2024_faktisk"]
-    df_vis["2025_forudsagt"] = y_pred_2025
+    df_fu = df_fuldført[["Uddannelse", "FagLinjer", "FagRetning", "2024"]].copy()
+    df_fu.rename(columns={"2024": "2024_fuldført"}, inplace=True)
+    df_fu["2025_fuldført (forudsagt)"] = y_pred_fu_2025
 
-    # Total antal studerende fra både Afbrudt og Fuldført
-    fuldfoert_2024 = df[df["Type"] == "Fuldført"]
-    afbrudt_2024 = df[df["Type"] == "Afbrudt"]
+    df_vis = pd.merge(df_vis, df_fu, on=["Uddannelse", "FagLinjer", "FagRetning"], how="outer")
 
-    sum_fuldført = fuldfoert_2024.groupby(["Uddannelse", "FagLinjer", "FagRetning"])["2024"].sum().reset_index()
-    sum_afbrudt = afbrudt_2024.groupby(["Uddannelse", "FagLinjer", "FagRetning"])["2024"].sum().reset_index()
+    df_vis["Frafaldsprocent_2025"] = df_vis["2025_afbrudt (forudsagt)"] / (
+        df_vis["2025_afbrudt (forudsagt)"] + df_vis["2025_fuldført (forudsagt)"]
+    ) * 100
 
-    merged = pd.merge(sum_fuldført, sum_afbrudt, on=["Uddannelse", "FagLinjer", "FagRetning"], suffixes=("_fuldført", "_afbrudt"))
-    merged["total_2024"] = merged["2024_fuldført"] + merged["2024_afbrudt"]
-
-    # Slå totals sammen med forudsigelser
-    df_vis = pd.merge(df_vis, merged[["Uddannelse", "FagLinjer", "FagRetning", "total_2024"]], on=["Uddannelse", "FagLinjer", "FagRetning"], how="left")
-    df_vis["Frafaldsprocent_2025"] = df_vis["2025_forudsagt"] / df_vis["total_2024"]
-
-    # Vis resultater
-    st.subheader("Tabel med forudsagte og faktiske værdier (kun afbrudt)")
+    st.subheader("Tabel med forudsagte værdier for 2025")
     st.dataframe(df_vis)
 
     st.subheader("Top 20 fagretninger – forudsagt frafald i 2025")
-    top20_antal = df_vis.sort_values("2025_forudsagt", ascending=False).head(20)
-    st.bar_chart(top20_antal.set_index("FagRetning")["2025_forudsagt"])
+    st.bar_chart(df_vis.sort_values("2025_afbrudt (forudsagt)", ascending=False).head(20).set_index("FagRetning")["2025_afbrudt (forudsagt)"])
+
+    st.subheader("Top 20 fagretninger – forudsagt fuldført i 2025")
+    st.bar_chart(df_vis.sort_values("2025_fuldført (forudsagt)", ascending=False).head(20).set_index("FagRetning")["2025_fuldført (forudsagt)"])
 
     st.subheader("Top 20 fagretninger – forudsagt frafaldsprocent i 2025")
-    top20_procent = df_vis.sort_values("Frafaldsprocent_2025", ascending=False).head(20)
-    st.bar_chart(top20_procent.set_index("FagRetning")["Frafaldsprocent_2025"])
+    st.bar_chart(df_vis.sort_values("Frafaldsprocent_2025", ascending=False).head(20).set_index("FagRetning")["Frafaldsprocent_2025"])
+
+    # VISUALISERING af historik og forudsigelse
+    st.subheader("Visualisering af regression for valgt fagretning (separat for afbrudt og fuldført)")
+    fagretninger = df_vis["FagRetning"].dropna().unique()
+    valgt_fagretning = st.selectbox("Vælg en fagretning", fagretninger)
+
+    # Filtrér data for valgt fagretning
+    row_ab = df_afbrudt[df_afbrudt["FagRetning"] == valgt_fagretning].reset_index(drop=True)
+    row_fu = df_fuldført[df_fuldført["FagRetning"] == valgt_fagretning].reset_index(drop=True)
+
+    if row_ab.empty or row_fu.empty:
+        st.warning("Valgt fagretning findes ikke i både afbrudt og fuldført data.")
+        return
+
+    idx_ab = row_ab.index[0]
+    idx_fu = row_fu.index[0]
+
+    år = list(range(2015, 2025))
+
+    # --------- Plot 1: Afbrudt ---------
+    y_ab = row_ab.iloc[0][[str(y) for y in år]].values
+    y_2025_ab = y_pred_ab_2025[idx_ab]
+
+    fig_ab, ax_ab = plt.subplots()
+    ax_ab.plot(år, y_ab, marker='o', label="Afbrudt 2015–2024")
+    ax_ab.plot(2025, y_2025_ab, 'go', label="Afbrudt 2025 (forudsagt)")
+    ax_ab.set_title(f"Afbrudt – {valgt_fagretning}")
+    ax_ab.set_xlabel("År")
+    ax_ab.set_ylabel("Antal studerende")
+    ax_ab.legend()
+    st.pyplot(fig_ab)
+
+    # --------- Plot 2: Fuldført ---------
+    y_fu = row_fu.iloc[0][[str(y) for y in år]].values
+    y_2025_fu = y_pred_fu_2025[idx_fu]
+
+    fig_fu, ax_fu = plt.subplots()
+    ax_fu.plot(år, y_fu, marker='x', linestyle='--', label="Fuldført 2015–2024")
+    ax_fu.plot(2025, y_2025_fu, 'ro', label="Fuldført 2025 (forudsagt)")
+    ax_fu.set_title(f"Fuldført – {valgt_fagretning}")
+    ax_fu.set_xlabel("År")
+    ax_fu.set_ylabel("Antal studerende")
+    ax_fu.legend()
+    st.pyplot(fig_fu)
