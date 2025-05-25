@@ -1,10 +1,5 @@
-Projektet undersøger frafaldsmønstre på tværs af videregående uddannelser i Danmark,
-med fokus på fagretninger, institutionstyper og geografisk fordeling. Gennem analyse af historiske
-data (2015-2024) kombineret med machine learning forudsigelser for 2025, belyses hvor og
-hvordan frafald sandsynligvis vil udvikle sig.
-Vi anvender både lineær regression og RandomForest til at forudsige afbrudte og fuldførte
-studerende, og visualiserer institutionernes data geografisk samt via clustering. Derudover vises
-hvilke variable (features) der har størst betydning for frafald gennem feature importance analyse.
-Resultaterne præsenteres i en interaktiv Streamlit løsning, som gør det muligt for beslutningstagere
-og rådgivere at identificere risikoområder og træffe datadrevne beslutninger for at mindske frafald
-og styrke fastholdelsen.
+Problemformulering: Hvordan kan machine learning og geografisk dataanalyse anvendes til at identificere og forudsige frafaldsmønstre blandt studerende på videregående uddannelser i Danmark – med fokus på fagretninger, institutionstyper og geografi – og hvordan kan denne indsigt bruges til at understøtte beslutningstagning og målrettede indsatser?
+
+Hypotese: Frafaldsrater varierer betydeligt på tværs af fagretninger, institutionstyper og geografiske områder, og disse mønstre kan forudsiges ved brug af regressionsmodeller og RandomForest, kombineret med visualiseringer og clusteranalyse.
+
+Løsning: Projektets løsning består af en interaktiv Streamlit-applikation, hvor brugeren kan udforske frafaldsdata fra videregående uddannelser i Danmark. Gennem anvendelse af lineær regression og RandomForest-modeller forudsiges frafald og fuldførelse i 2025 baseret på historiske data (2015–2024). Løsningen indeholder visuelle komponenter såsom geografisk kort over institutioner, klyngeanalyse af institutionstyper og en feature importance-analyse, der fremhæver hvilke faktorer der mest påvirker frafald. Dette gør det muligt for beslutningstagere at identificere mønstre og risikoområder og anvende indsigten til at støtte fastholdelse og målrette indsatser.
