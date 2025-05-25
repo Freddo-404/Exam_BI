@@ -22,7 +22,7 @@ def main():
     st.set_page_config(page_title="Uddannelse BI", layout="wide")
     st.sidebar.title("Navigation")
 
-    page = st.sidebar.selectbox("Vælg en side", ["Homepage", "Visualization", "Prediction", "Institutioner", "Kortvisning"])
+    page = st.sidebar.selectbox("Vælg en side", ["Homepage", "Visualization", "Prediction", "Institutioner", "Kortvisning", "Frediction"])
 
     try:
         if page == "Homepage":
@@ -34,6 +34,10 @@ def main():
         elif page == "Institutioner":
             visualization.show_graphsInstitutioner()
             visualization.show_graphsInstitutionerSelvValgt()
+            visualization.show_institution_clustering()
+            visualization.show_feature_importance()
+        elif page == "Frediction":
+             visualization.show_uddannelse_prediction_model()
         elif page == "Kortvisning":
             visualization.show_map_institution()
     except Exception as e:
