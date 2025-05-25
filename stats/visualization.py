@@ -18,21 +18,39 @@ def show_map_institution():
     grouped["Frafaldsprocent (%)"] = grouped["Frafaldsprocent (%)"].round(2)
 
     coordinates_map = {
-        "Københavns Professionshøjskole": (55.6909, 12.5529),
-        "Professionshøjskolen VIA University College": (56.1629, 10.2039),
-        "Erhvervsakademi Aarhus": (56.1629, 10.2039),
-        "Professionshøjskolen University College Nordjylland": (57.0488, 9.9217),
-        "Erhvervsakademiet Copenhagen Business Academy": (55.6759, 12.5655),
-        "University College Lillebælt": (55.4038, 10.4024),
-        "University College Sjælland": (55.4377, 11.5666),
-        "University College Syddanmark": (55.4904, 9.4722),
-        "Erhvervsakademi Dania": (56.4604, 10.0364),
-        "Erhvervsakademi SydVest": (55.4765, 8.4594),
-        "Erhvervsakademi MidtVest": (56.3615, 8.6164),
-        "Erhvervsakademi Sjælland": (55.4580, 11.5820),
-        "IBA Erhvervsakademi Kolding": (55.4910, 9.4720),
-        "Erhvervsakademi Bornholm": (55.1037, 14.7065),
-        "Erhvervsakademi Nordjylland": (57.0488, 9.9217),
+    "Københavns Professionshøjskole": (55.7066, 12.5536),
+    "Professionshøjskolen VIA University College": (56.1839, 10.1905),
+    "Erhvervsakademi Aarhus": (56.1243, 10.1621),
+    "Professionshøjskolen University College Nordjylland": (57.0200, 9.9350),
+    "Erhvervsakademiet Copenhagen Business Academy": (55.6817, 12.5676),
+    "University College Lillebælt": (55.3959, 10.3863),
+    "University College Sjælland": (55.4377, 11.5666),
+    "University College Syddanmark": (55.4800, 8.4500),
+    "Erhvervsakademi Dania": (56.4604, 10.0364),
+    "Erhvervsakademi SydVest": (55.4765, 8.4594),
+    "Erhvervsakademi MidtVest": (56.1361, 8.9766),
+    "Erhvervsakademi Sjælland": (54.7691, 11.8746),
+    "IBA Erhvervsakademi Kolding": (55.4910, 9.4720),
+    "Erhvervsakademi Bornholm": (55.1037, 14.7065),
+    "Erhvervsakademi Nordjylland": (57.0488, 9.9217),
+    "UCL Erhvervsakademi og Professionshøjskole": (55.3959, 10.3863),
+    "UCN Teknologi og Business": (57.0488, 9.9187),
+    "UC SYD Esbjerg": (55.4667, 8.4517),
+    "UC SYD Haderslev": (55.2483, 9.4905),
+    "UC SYD Aabenraa": (55.0449, 9.4199),
+    "UC SYD Kolding": (55.4917, 9.4731),
+    "UC SYD Tønder": (54.9383, 8.8655),
+    "UC SYD Sønderborg": (54.9117, 9.8078),
+    "Absalon Kalundborg": (55.6433, 11.0807),
+    "Absalon Nykøbing F.": (54.7691, 11.8746),
+    "Absalon Holbæk": (55.7202, 11.7120),
+    "Absalon Slagelse": (55.4022, 11.3540),
+    "Absalon Roskilde": (55.6415, 12.0872),
+    "Absalon Vordingborg": (55.0084, 11.9102),
+    "Absalon Næstved": (55.2285, 11.7600),
+    "Danmarks Medie- og Journalisthøjskole": (56.1511, 10.1901),
+    "Maskinmesterskolen København": (55.7026, 12.5964),
+    "Aalborg Maskinmesterskole": (57.0480, 9.9187)
     }
 
     grouped["lat"] = grouped["Subinstitution"].map(lambda x: coordinates_map.get(x, (None, None))[0])
@@ -43,7 +61,6 @@ def show_map_institution():
         st.warning("Ingen koordinater matchede institutionerne.")
         return
 
-    # Valgmulighed til at vælge visning
     visning = st.selectbox(
         "Vælg hvad kortet skal vise farve ud fra:",
         ("Frafaldsprocent (%)", "Afbrudte", "Fuldførte")
@@ -62,7 +79,13 @@ def show_map_institution():
         size="Afbrudte",
         color=visning,
         hover_name="Subinstitution",
-        hover_data=["Afbrudte", "Fuldførte", "Frafaldsprocent (%)"],
+        hover_data={    
+            "Afbrudte": True,
+            "Fuldførte": True,
+            "Frafaldsprocent (%)": True,
+            "lat": False,
+            "lon": False
+        },
         color_continuous_scale=color_scale[visning],
         size_max=25,
         zoom=6,
