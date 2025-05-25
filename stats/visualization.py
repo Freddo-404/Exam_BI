@@ -138,42 +138,6 @@ def scatter_plot_3d(data, x_column, y_column, z_column, title="3D Scatter Plot",
     
 
 
-def show_graphsInstitutioner():
-    st.header("Visualisering af data")
-
-    # Læs data
-    data = pd.read_excel("Streamlit/Data/Afbrudte_og_fuldførte_institution.xlsx")
-
-    # Rens data (fjerner 'Hovedinstitution' m.m.)
-    data = data[~data["Institution"].isin(["Institution", "HovedInstitutionTx", "Hovedinstitution"])]
-    data = data.sort_values("Fuldførte", ascending=False)
-    
-
-   
-    st.subheader("Antal fuldførte pr. institution")
-    fig1 = px.bar(
-        data,
-        x="InstitutionType",
-        y="Fuldførte",
-        title="Fuldførte pr. InstitutionType",
-        hover_name="InstitutionType"
-    )
-    fig1.update_layout(xaxis={'visible': False}, width=1200, height=500)  # Skjul labels, bred grafik
-    st.plotly_chart(fig1)
-
-    data_sorted_afbrudte = data.sort_values("Afbrudte", ascending=False)
-    st.subheader("Antal afbrudte pr. institution")
-    fig2 = px.bar(
-        data_sorted_afbrudte,
-        x="InstitutionType",
-        y="Afbrudte",
-        title="Afbrudte pr. InstitutionType",
-        hover_name="InstitutionType"
-    )
-    fig2.update_layout(xaxis={'visible': False}, width=1200, height=500)
-    st.plotly_chart(fig2)
-
-
 
 
 def show_graphsInstitutionerSelvValgt():
@@ -298,8 +262,13 @@ def show_feature_importance():
     # Indlæs data
     df = pd.read_excel("Streamlit/Data/Afbrudte_og_fuldførte_institution.xlsx")
     df = df[~df["Institution"].isin(["Institution", "HovedInstitutionTx", "Hovedinstitution"])]
-    df[["Afbrudte", "Fuldførte"]] = df[["Afbrudte", "Fuldførte"]].fillna(0)
+    df[["Afbrudte", "Fuldførte"]] = df[["Afbrudte", "Fuldførte"]].apply(pd.to_numeric, errors="coerce").fillna(0)
     df = df[~((df["Afbrudte"] == 0) & (df["Fuldførte"] == 0))]
+    
+    df = df[~((df["Fuldførte"] == 0) & (df["Afbrudte"] > 200))]
+    
+    
+    
     df["dropout_rate"] = df["Afbrudte"] / (df["Afbrudte"] + df["Fuldførte"])
 
     # Tilføj region

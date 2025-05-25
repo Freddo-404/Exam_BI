@@ -32,7 +32,6 @@ def main():
         elif page == "Prediction":
             visualization.show_prediction_model()
         elif page == "Institutioner":
-            visualization.show_graphsInstitutioner()
             visualization.show_graphsInstitutionerSelvValgt()
             visualization.show_institution_clustering()
             visualization.show_feature_importance()
