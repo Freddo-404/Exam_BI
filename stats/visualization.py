@@ -225,11 +225,7 @@ def show_graphsInstitutionerSelvValgt():
 
     st.divider()
 
-    # Sammenlign frafaldsrate med andre institutionstyper (kun hvis 'Alle år' er valgt)
-    if valgt_år == "Alle år":
-        st.subheader("Sammenlign frafaldsrate med andre institutionstyper")
-        fig2 = px.box(data, x="InstitutionType", y="Frafaldsrate", title="Frafaldsrate fordelt på InstitutionType", points="all")
-        st.plotly_chart(fig2)
+   
 
 
 
