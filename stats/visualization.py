@@ -436,20 +436,6 @@ def show_graphs():
         "Frafaldsrate (%)": frafaldsrate
     }, index=years))
     
-    # Ekstra plots
-    st.subheader("Fordelingsanalyser")
-    if 'Type' in df.columns:
-        histogram(df, 'Type', title="Antallet af afbrudte og fuldførte")
-
-    if '2015' in df.columns:
-        boxplot(df, '2015', title="Niveau i 2015")
-    if '2020' in df.columns:
-        boxplot(df, '2020', title="Niveau i 2020")
-    if '2023' in df.columns:
-        boxplot(df, '2023', title="Niveau i 2023")
-
-    if all(col in df.columns for col in ['2015', '2020', '2023', 'Type']):
-        scatter_plot_3d(df, '2015', '2020', '2023', title="Tendenser 2015–2023", color_column='Type')
 
 def show_prediction_model():
     st.header("Forudsig frafald og fuldførelse i 2025 med lineær regression")
