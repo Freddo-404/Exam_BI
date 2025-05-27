@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
 
 def show_map_institution():
-    st.header("📍 Kortvisning: Institutioner")
+    st.header("Kortvisning: Institutioner")
 
     # Læs og forbered data
     file_path = "Streamlit/Data/Afbrudte_og_fuldførte_institution.xlsx"
@@ -558,7 +558,7 @@ def show_uddannelse_prediction_model():
     tabs = st.tabs(["Modellering", "🔍 Klyngeanalyse", "Forudsigelse 2025", "Baggrund"])
 
    
-    # === KLYNGETAB ===
+    # KLYNGETAB
     with tabs[1]:
         st.text_input("Beskrivelse af klyngeanalyse", "Skriv tekst her")
         st.subheader("PCA + DBSCAN Klyngeanalyse")
@@ -588,7 +588,7 @@ def show_uddannelse_prediction_model():
         ax.legend()
         st.pyplot(fig)
 
-    # === FORUDSIGELSE 2025 ===
+    # FORUDSIGELSE 2025
     with tabs[2]:
         st.text_input("Forudsigelse for 2025", "Skriv tekst her")
         st.subheader("Forudsigelse 2025 per faglinje")
@@ -621,7 +621,7 @@ def show_uddannelse_prediction_model():
         ax2.set_xticklabels(sorted_df.index[:10], rotation=45, ha='right')
         st.pyplot(fig2)
 
-    # === BAGGRUND ===
+    # BAGGRUND
     with tabs[3]:
         st.markdown("""\
 ### Baggrund: Frafald blandt pædagogstuderende
@@ -632,7 +632,7 @@ Regeringen har foreslået en ny erhvervsrettet ungdomsuddannelse, EPX, der skal 
 """)
 
         st.markdown("""\
-### 📘 Resumé: Frafald på sundhedsuddannelserne ved VIA University College
+###  Resumé: Frafald på sundhedsuddannelserne ved VIA University College
 
 Analysen fra Danmarks Evalueringsinstitut (EVA) identificerer flere centrale årsager til, at studerende på sundhedsuddannelserne ved VIA University College vælger at afbryde deres uddannelse:
 

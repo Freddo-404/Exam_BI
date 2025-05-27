@@ -13,7 +13,7 @@ from stats import visualization
 
 # Forsidefunktion
 def show_homepage():
-    st.header("📊 Uddannelse Data Analysis")
+    st.header(" Uddannelse Data Analysis")
     st.write("Velkommen til vores BI-analyseværktøj for uddannelse og frafald.")
     st.write("Brug menuen til venstre for at se grafer eller prøve en forudsigelsesmodel.")
 
@@ -42,7 +42,7 @@ def main():
         elif page == "Konklusion":
             visualization.render_conclusion_page()
     except Exception as e:
-        st.error(f"⚠️ Fejl under visning af siden: {e}")
+        st.error(f" Fejl under visning af siden: {e}")
 
 if __name__ == "__main__":
     main()
