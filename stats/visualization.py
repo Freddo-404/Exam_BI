@@ -478,12 +478,25 @@ def show_prediction_model():
 
     df_vis = pd.merge(df_vis, df_fu, on=["Uddannelse", "FagLinjer", "FagRetning"], how="outer")
 
+    # Beregn faktisk frafaldsprocent for 2024
+    df_vis["Frafaldsprocent_2024"] = df_vis["2024_afbrudt"] / (
+        df_vis["2024_afbrudt"] + df_vis["2024_fuldført"]
+    ) * 100
+
+    # Beregn forudsagt frafaldsprocent for 2025
     df_vis["Frafaldsprocent_2025"] = df_vis["2025_afbrudt (forudsagt)"] / (
         df_vis["2025_afbrudt (forudsagt)"] + df_vis["2025_fuldført (forudsagt)"]
     ) * 100
 
-    st.subheader("Tabel med forudsagte værdier for 2025")
-    st.dataframe(df_vis)
+    # Vis tabel
+    st.subheader("Tabel med faktisk og forudsagt frafaldsprocent")
+    visningskolonner = [
+        "Uddannelse", "FagLinjer", "FagRetning",
+        "2024_afbrudt", "2024_fuldført", "Frafaldsprocent_2024",
+        "2025_afbrudt (forudsagt)", "2025_fuldført (forudsagt)", "Frafaldsprocent_2025"
+    ]
+    st.dataframe(df_vis[visningskolonner].sort_values(by="Frafaldsprocent_2025", ascending=False).round(1))
+    st.caption("Frafaldsprocenten er beregnet som afbrudte / (afbrudte + fuldførte). 2025 er en forudsigelse, 2024 er observeret data.")
 
     # VISUALISERING af historik og forudsigelse
     st.subheader("Visualisering af regression for valgt fagretning (separat for afbrudt og fuldført)")
@@ -515,6 +528,7 @@ def show_prediction_model():
     ax_ab.set_ylabel("Antal studerende")
     ax_ab.legend()
     st.pyplot(fig_ab)
+
 
     # --------- Plot 2: Fuldført ---------
     y_fu = row_fu.iloc[0][[str(y) for y in år]].values
