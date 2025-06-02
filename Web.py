@@ -16,6 +16,11 @@ def show_homepage():
     st.header(" Uddannelse Data Analysis")
     st.write("Velkommen til vores BI-analyseværktøj for uddannelse og frafald.")
     st.write("Brug menuen til venstre for at se grafer eller prøve en forudsigelsesmodel.")
+    st.write("Problemformulering: "+
+             " Hvordan kan machine learning og geografisk dataanalyse anvendes til at identificere "+
+            " og forudsige frafaldsmønstre blandt studerende på videregående uddannelser i Danmark " +
+             "– med fokus på fagretninger, institutionstyper og geografi " +
+            " – og hvordan kan denne indsigt bruges til at understøtte beslutningstagning og målrettede indsatser?")
 
 # Hovedfunktion
 def main():
