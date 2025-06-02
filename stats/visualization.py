@@ -114,35 +114,6 @@ def show_map_institution():
 > 🔗 [Kilde: Berlingske, maj 2025](https://www.berlingske.dk/danmark/ansoegninger-til-koebenhavns-professionshoejskole-falder-markant)
 """)
 
-
-def histogram(data, column_name, title="Histogram"):
-    fig, ax = plt.subplots()
-    ax.hist(data[column_name], bins=10, edgecolor='black')
-    ax.set_title(title)
-    ax.set_xlabel(column_name)
-    ax.set_ylabel("Frequency")
-    st.pyplot(fig)
-
-def boxplot(data, column_name, title="Box Plot"):
-    fig, ax = plt.subplots()
-    sns.boxplot(y=data[column_name], ax=ax)
-    ax.set_title(title)
-    st.pyplot(fig)
-
-def scatter_plot(data, x_column, y_column, title="Scatter Plot"):
-    fig, ax = plt.subplots()
-    ax.scatter(data[x_column], data[y_column])
-    ax.set_title(title)
-    ax.set_xlabel(x_column)
-    ax.set_ylabel(y_column)
-    st.pyplot(fig)
-
-def scatter_plot_3d(data, x_column, y_column, z_column, title="3D Scatter Plot", color_column=None):
-    st.subheader(title)
-    fig = px.scatter_3d(data, x=x_column, y=y_column, z=z_column, color=color_column, opacity=0.7)
-    fig.update_layout(title=title)
-    st.plotly_chart(fig)
-    
     
 
 
@@ -329,35 +300,7 @@ def show_feature_importance():
 
 # VISUALISERING: Faglinje og grafer
 
-# Funktion: Histogram
-def histogram(data, column_name, title="Histogram"):
-    fig, ax = plt.subplots()
-    ax.hist(data[column_name], bins=10, edgecolor='black')
-    ax.set_title(title)
-    ax.set_xlabel(column_name)
-    ax.set_ylabel("Frequency")
-    st.pyplot(fig)
 
-# Funktion: Boxplot
-def boxplot(data, column_name, title="Box Plot"):
-    fig, ax = plt.subplots()
-    sns.boxplot(y=data[column_name], ax=ax)
-    ax.set_title(title)
-    st.pyplot(fig)
-
-# Funktion: Scatter plot (3D)
-def scatter_plot_3d(data, x_column, y_column, z_column, title="3D Scatter Plot", color_column=None):
-    st.subheader(title)
-    fig = px.scatter_3d(
-        data,
-        x=x_column,
-        y=y_column,
-        z=z_column,
-        color=color_column,
-        opacity=0.7
-    )
-    fig.update_layout(title=title)
-    st.plotly_chart(fig)
 
 # Funktion: Hovedvisualisering
 def show_graphs():
