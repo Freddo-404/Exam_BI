@@ -221,6 +221,11 @@ def show_institution_clustering():
     kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
     df["Cluster"] = kmeans.fit_predict(X_scaled)
 
+    # Beregn silhouette score
+    from sklearn.metrics import silhouette_score
+    score = silhouette_score(X_scaled, df["Cluster"])
+    st.write(f"Silhouette Score: {score:.3f}")
+
     st.write("Cluster centers (scaled):", kmeans.cluster_centers_)
 
     # Visualize clusters
@@ -228,6 +233,7 @@ def show_institution_clustering():
                      hover_data=["Subinstitution", "dropout_rate"],
                      title="Institutioner grupperet efter frafald og fuldførelse")
     st.plotly_chart(fig)
+
 
 
 
@@ -639,7 +645,6 @@ def render_conclusion_page():
     st.subheader("Geografisk og faglig sammenhæng")
     st.markdown("""
 - Områder med højt frafald korrelerer med lavere søgning og lavere gennemførsel.
-- Især **Hovedstadsområdet og Region Sjælland** viser tendenser til lavere gennemførelse på specifikke fag.
 - **Fag som humaniora og sundhedsuddannelser** viser både højt frafald og stor forskel i modelprognoser – et signal om ustabilitet i udviklingen.
 """)
 
