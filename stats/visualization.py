@@ -240,11 +240,9 @@ def show_feature_importance():
     df = df[~df["Institution"].isin(["Institution", "HovedInstitutionTx", "Hovedinstitution"])]
     df[["Afbrudte", "Fuldførte"]] = df[["Afbrudte", "Fuldførte"]].apply(pd.to_numeric, errors="coerce").fillna(0)
     df = df[~((df["Afbrudte"] == 0) & (df["Fuldførte"] == 0))]
-    
     df = df[~((df["Fuldførte"] == 0) & (df["Afbrudte"] > 200))]
-    
-    
-    
+
+    # Dropout rate
     df["dropout_rate"] = df["Afbrudte"] / (df["Afbrudte"] + df["Fuldførte"])
 
     # Tilføj region
@@ -268,34 +266,60 @@ def show_feature_importance():
     df["Region"] = df["Subinstitution"].map(region_map)
     df = df.dropna(subset=["Region", "dropout_rate"])
 
-    # Encode categorical features (Region, År, InstitutionType)
-    X = pd.get_dummies(df[["År", "InstitutionType", "Region"]])
-    y = df["dropout_rate"]
+    # Filtrer data til træning: år 2015-2024
+    train_df = df[(df["År"] >= 2015) & (df["År"] <= 2024)]
 
+    # Data til prediction: år 2023 (bruges til at forudsige 2025)
+    predict_df = df[df["År"] == 2023]
+
+    # Features til træning og prediction
+    feature_cols = ["År", "InstitutionType", "Region"]
+
+    # One-hot encoding af features for træning
+    X_train = pd.get_dummies(train_df[feature_cols])
+    y_train = train_df["dropout_rate"]
+
+    # One-hot encoding af features for prediction (2023)
+    X_predict = pd.get_dummies(predict_df[feature_cols])
+
+    # Sørg for, at kolonner matcher (f.eks. hvis nogle dummy-kolonner mangler i X_predict)
+    X_predict = X_predict.reindex(columns=X_train.columns, fill_value=0)
+
+    # Træn modellen
     model = RandomForestRegressor(n_estimators=100, random_state=42)
-    model.fit(X, y)
-    y_pred = model.predict(X)
+    model.fit(X_train, y_train)
 
-    importances = pd.Series(model.feature_importances_, index=X.columns)
-    importances_percent = importances * 100  # Show as percent
+    # Forudsig dropout_rate for 2025 baseret på 2023 data
+    y_pred_2025 = model.predict(X_predict)
 
-    # Use Plotly for a better bar chart
+    # Sammenlign forudsagt 2025 dropout_rate med faktisk 2023 dropout_rate
+    comparison_df = predict_df.copy()
+    comparison_df["Predicted_dropout_rate_2025"] = y_pred_2025
+    comparison_df["Difference"] = comparison_df["Predicted_dropout_rate_2025"] - comparison_df["dropout_rate"]
+
+    # Vis feature importance
+    importances = pd.Series(model.feature_importances_, index=X_train.columns)
+    importances_percent = importances * 100
     importances_df = importances_percent.sort_values(ascending=False).reset_index()
     importances_df.columns = ["Feature", "Importance (%)"]
+
     fig = px.bar(importances_df, x="Feature", y="Importance (%)", title="Feature Importance for Dropout Rate")
     st.plotly_chart(fig)
 
-    st.write("De vigtigste features for at forudsige frafaldsrate (%):", importances_df.head(10))
+    st.write("De vigtigste features for at forudsige frafaldsrate (%):", importances_df.head(20))
 
-    # Show predictions vs. actual
-    df["Predicted_dropout_rate"] = y_pred
-    st.subheader("Faktisk vs. forudsagt frafaldsrate")
-    st.dataframe(df[["År", "InstitutionType", "Region", "dropout_rate", "Predicted_dropout_rate"]])
+    st.subheader("Sammenligning af faktisk dropout-rate i 2023 og forudsagt dropout-rate i 2025")
+    st.dataframe(comparison_df[["InstitutionType", "År", "dropout_rate", "Predicted_dropout_rate_2025", "Difference"]])
 
-    # Show R2 score
-    from sklearn.metrics import r2_score
-    r2 = r2_score(y, y_pred)
-    st.write(f"R²-score for modellen: {r2:.3f}")
+    y_train_pred = model.predict(X_train)
+    r2 = r2_score(y_train, y_train_pred)
+    st.write(f"R²-score for modellen på træningsdata (2015-2024): {r2:.3f}")
+
+
+
+
+
+
 
 
 
