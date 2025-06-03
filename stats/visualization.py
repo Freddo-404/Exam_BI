@@ -209,6 +209,7 @@ def show_institution_clustering():
     df[["Afbrudte", "Fuldførte"]] = df[["Afbrudte", "Fuldførte"]].fillna(0)
     df = df[~((df["Afbrudte"] == 0) & (df["Fuldførte"] == 0))]
     df["dropout_rate"] = df["Afbrudte"] / (df["Afbrudte"] + df["Fuldførte"])
+    df = df[~((df["Fuldførte"] == 0) & (df["Afbrudte"] > 200))]
 
     # Select features for clustering
     features = df[["Afbrudte", "Fuldførte", "dropout_rate"]]
